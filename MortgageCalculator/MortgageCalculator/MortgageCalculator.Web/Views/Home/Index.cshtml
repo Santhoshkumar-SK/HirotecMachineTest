@@ -1,0 +1,161 @@
+﻿@*@model MortgageCalculator.Dto.MortgageDto*@
+@model MortgageCalculator.Dto.MortgageHomepageDto
+@{
+    ViewBag.Title = "Home Page";
+    var interestTypes = Enum.GetValues(typeof(MortgageCalculator.Dto.Enum.MortgageEnum.MortgageType))
+        .Cast<MortgageCalculator.Dto.Enum.MortgageEnum.MortgageType>()
+        .Select(e => new SelectListItem { Text = e.ToString(), Value = e.ToString() });
+    var repaymentTypes = Enum.GetValues(typeof(MortgageCalculator.Dto.Enum.MortgageEnum.InterestRepayment))
+        .Cast<MortgageCalculator.Dto.Enum.MortgageEnum.InterestRepayment>()
+        .Select(e => new SelectListItem { Text = e.ToString(), Value = e.ToString() });
+}
+
+<div class="jumbotron">
+    <h1>Mortgage Calculator</h1>
+    <p class="lead">
+        The Mortgage Calculator helps you:
+        <ul>
+            <li>Choose the right loan for you</li>
+            <li>The Interests and Repayment on your loan</li>
+        </ul>
+    </p>
+</div>
+
+
+<div class="row">
+    <div class="col-md-12">
+        @using (Html.BeginForm("Index", "Home", FormMethod.Post, new { @class = "form-horizontal" }))
+        {
+            <fieldset>
+                <legend>Calculator</legend>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Mortgage.MortgageName, "Mortgage Name", new { @class = "col-md-4 control-label" })
+                    <div class="col-md-4">
+                        @Html.TextBoxFor(m => m.Mortgage.MortgageName, new { @class = "form-control", required = "required" })
+                        <span class="help-block">Enter a name for this mortgage</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Mortgage.PrincipalAmount, "Borrowed Amount", new { @class = "col-md-4 control-label" })
+                    <div class="col-md-4">
+                        @Html.TextBoxFor(m => m.Mortgage.PrincipalAmount, new { @class = "form-control", type = "number", step = "1", min = "1", required = "required" })
+                        <span class="help-block">Enter the amount to borrow</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Mortgage.RateofInterest, "Rate of Interest (%)", new { @class = "col-md-4 control-label" })
+                    <div class="col-md-4">
+                        @Html.TextBoxFor(m => m.Mortgage.RateofInterest, new { @class = "form-control", type = "number", step = "0.01", min = "0", required = "required" })
+                        <span class="help-block">Mortgagenter the annual interest rate</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Mortgage.TermsInYears, "Number of Terms (Years)", new { @class = "col-md-4 control-label" })
+                    <div class="col-md-4">
+                        @Html.TextBoxFor(m => m.Mortgage.TermsInYears, new { @class = "form-control", type = "number", min = "1", required = "required" })
+                        <span class="help-block">Enter the number of months</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-md-4 control-label" for="InterestDetails_MortgageType">Interest Type</label>
+                    <div class="col-md-4">
+                        @Html.DropDownList("Mortgage.InterestDetails.MortgageType", interestTypes, "Select Interest Type", new { @class = "form-control", required = "required", @id = "interestDropdown" })                       
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-md-4 control-label" for="InterestDetails_InterestRepayment">Repayment Type</label>
+                    <div class="col-md-4">
+                        @Html.DropDownList("Mortgage.InterestDetails.InterestRepayment", repaymentTypes, "Select Repayment Type", new { @class = "form-control", required = "required", @id= "interestDropdown" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-md-4 control-label" for="MortgageFees_0__FeesName">Fees Name</label>
+                    <div class="col-md-4">
+                        @Html.TextBoxFor(m => m.Mortgage.MortgageFees[0].FeesName, new { @class = "form-control", type = "string", min = "0" })
+                        <span class="help-block">enter the fees name</span>
+                        @*<input type="text" name="MortgageFees[0].FeesName" class="form-control" required="required" />*@
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-md-4 control-label" for="MortgageFees_0__FeesAmount">Fees Value</label>
+                    <div class="col-md-4">
+                        @Html.TextBoxFor(m => m.Mortgage.MortgageFees[0].FeesAmount, new { @class = "form-control", type = "string", min = "0" })
+                        <span class="help-block">enter the fees amount</span>
+                        @*<input type="number" name="Mortgage.MortgageFees[0].FeesAmount" class="form-control" step="0.01" min="0" required="required" />*@
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-4 col-md-offset-4">
+                        <button type="submit" class="btn btn-primary">Calculate</button>
+                    </div>
+                </div>
+            </fieldset>
+        }
+    </div>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Mortgage Name</th>
+            <th>Principle Amount</th>
+            <th> @Html.ActionLink("Rate Of Interest", "Index", new { sortBy = "roi", sortOrder = ViewBag.SortOrder })</th>
+            <th>Terms in Month</th>
+            <th>Repayment Amount</th>
+            <th>Total Interest</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.MortgageHistory != null && Model.MortgageHistory.Any())
+        {
+            foreach (var item in Model.MortgageHistory)
+            {
+                <tr>
+                    <td>@item.MortgageName</td>
+                    <td>@item.PrincipalAmount.ToString("N2")</td>
+                    <td>@item.RateofInterest.ToString("N2")</td>
+                    <td>@item.TermsInYears.ToString("N2")</td>
+                    <td>@item.TotalAmount.ToString("N2")</td>
+                    <td>@item.TotalInterest.ToString("N2")</td>
+                    <td>
+                        @using (Html.BeginForm("ViewMortgage", "Home", FormMethod.Post))
+                        {
+                            @Html.Hidden("mortgageId", item.MortgageId)
+                            <button type="submit" class="btn btn-primary">View</button>
+                        }
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" class="text-center">No Mortgage data available</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script>
+    $(document).ready(function () {
+        $("#repaymentDropdown").select2({
+            placeholder: "Select Repayment Type",
+            allowClear: true
+        });
+
+        $("#interestDropdown").select2({
+            placeholder: "Select Interest Type",
+            allowClear: true
+        });
+    });
+</script>
