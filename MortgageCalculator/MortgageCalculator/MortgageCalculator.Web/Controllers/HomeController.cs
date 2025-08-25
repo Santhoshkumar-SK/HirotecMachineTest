@@ -71,7 +71,7 @@ namespace MortgageCalculator.Web.Controllers
 		}
 
 		[HttpGet]
-		public ActionResult Index(string sortBy = "roi", string sortOrder = "asc")
+		public ActionResult Index(string sortBy = "default", string sortOrder = "asc")
 		{
 			BaseResponse<MortgageHomepageDto> result = _mortgageService.GetAllMortgageCalculations(sortBy, sortOrder);
 			ViewBag.CurrentSort = sortBy;

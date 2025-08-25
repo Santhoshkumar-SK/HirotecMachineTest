@@ -49,7 +49,7 @@
                     @Html.LabelFor(m => m.Mortgage.RateofInterest, "Rate of Interest (%)", new { @class = "col-md-4 control-label" })
                     <div class="col-md-4">
                         @Html.TextBoxFor(m => m.Mortgage.RateofInterest, new { @class = "form-control", type = "number", step = "0.01", min = "0", required = "required" })
-                        <span class="help-block">Mortgagenter the annual interest rate</span>
+                        <span class="help-block">Enter the annual interest rate</span>
                     </div>
                 </div>
 
@@ -57,21 +57,23 @@
                     @Html.LabelFor(m => m.Mortgage.TermsInYears, "Number of Terms (Years)", new { @class = "col-md-4 control-label" })
                     <div class="col-md-4">
                         @Html.TextBoxFor(m => m.Mortgage.TermsInYears, new { @class = "form-control", type = "number", min = "1", required = "required" })
-                        <span class="help-block">Enter the number of months</span>
+                        <span class="help-block">Enter the number of years</span>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="col-md-4 control-label" for="InterestDetails_MortgageType">Interest Type</label>
                     <div class="col-md-4">
-                        @Html.DropDownList("Mortgage.InterestDetails.MortgageType", interestTypes, "Select Interest Type", new { @class = "form-control", required = "required", @id = "interestDropdown" })                       
+                        @Html.DropDownList("Mortgage.InterestDetails.MortgageType", interestTypes, "Select Interest Type", new { @class = "form-control", required = "required", @id = "interestDropdown" })
+                        <span class="help-block">Select the interest type</span>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="col-md-4 control-label" for="InterestDetails_InterestRepayment">Repayment Type</label>
                     <div class="col-md-4">
-                        @Html.DropDownList("Mortgage.InterestDetails.InterestRepayment", repaymentTypes, "Select Repayment Type", new { @class = "form-control", required = "required", @id= "interestDropdown" })
+                        @Html.DropDownList("Mortgage.InterestDetails.InterestRepayment", repaymentTypes, "Select Repayment Type", new { @class = "form-control", required = "required", @id = "interestDropdown" })
+                        <span class="help-block">Select the repayment type</span>
                     </div>
                 </div>
 
@@ -80,8 +82,7 @@
                     <div class="col-md-4">
                         @Html.TextBoxFor(m => m.Mortgage.MortgageFees[0].FeesName, new { @class = "form-control", type = "string", min = "0" })
                         <span class="help-block">enter the fees name</span>
-                        @*<input type="text" name="MortgageFees[0].FeesName" class="form-control" required="required" />*@
-                    </div>
+                    </div>                    
                 </div>
 
                 <div class="form-group">

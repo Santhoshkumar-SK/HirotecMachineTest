@@ -1,6 +1,7 @@
 ﻿using MortgageCalculator.Dll.Entities;
 using MortgageCalculator.Dll.Repos;
 using MortgageCalculator.Dto;
+using MortgageCalculator.Dto.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -127,9 +128,9 @@ namespace MortgageCalculator.Bll.Services
 						Result = new MortgagewithCalculationDto
 						{
 							Mortgage = MapToMortgageDto(mortageEntity),
-							TotalInterest = CalculateTotalInterest(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInYears * 12),
-							TotalRepaymentAmount = CalculateTotalRePaymentAmt(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInYears * 12),
-							MonthlyAmortization = CalculateMonthlyAmortization(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInYears * 12)
+							TotalInterest = CalculateTotalInterest(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInYears * 12, mortgage.InterestDetails.InterestRepayment),
+							TotalRepaymentAmount = CalculateTotalRePaymentAmt(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInYears * 12, mortgage.InterestDetails.InterestRepayment),
+							MonthlyAmortization = CalculateMonthlyAmortization(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInYears * 12,mortgage.InterestDetails.InterestRepayment)
 						},
 						ErrorInfo = null,
 						HttpStatusCode = 201
@@ -189,7 +190,7 @@ namespace MortgageCalculator.Bll.Services
 							Mortgage = MapToMortgageDto(mortgage),
 							TotalInterest = mortgage.TotalInterest,
 							TotalRepaymentAmount = mortgage.TotalAmount,
-							MonthlyAmortization = CalculateMonthlyAmortization(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInMonths)
+							MonthlyAmortization = CalculateMonthlyAmortization(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInMonths, mortgage.InterestDetails.InterestRepayment)
 						}
 					};
 				}					
@@ -230,8 +231,8 @@ namespace MortgageCalculator.Bll.Services
 				PrincipalAmount = dto.PrincipalAmount,
 				RateofInterest = dto.RateofInterest,
 				TermsInMonths = dto.TermsInYears * 12,
-				TotalAmount = CalculateTotalRePaymentAmt(dto.PrincipalAmount, dto.RateofInterest, dto.TermsInYears*12),
-				TotalInterest = CalculateTotalInterest(dto.PrincipalAmount, dto.RateofInterest, dto.TermsInYears * 12),
+				TotalAmount = CalculateTotalRePaymentAmt(dto.PrincipalAmount, dto.RateofInterest, dto.TermsInYears*12, dto.InterestDetails.InterestRepayment),
+				TotalInterest = CalculateTotalInterest(dto.PrincipalAmount, dto.RateofInterest, dto.TermsInYears * 12, dto.InterestDetails.InterestRepayment),
 				InterestDetails = dto.InterestDetails != null ? new InterestDetails
 				{					
 					EffectiveStartDate = dto.InterestDetails.EffectiveStartDate,
@@ -286,20 +287,33 @@ namespace MortgageCalculator.Bll.Services
 			return Math.Round(emi, 2);
 		}
 
-		private decimal CalculateTotalRePaymentAmt(int principal, decimal rate, int terms)
+		private decimal CalculateTotalRePaymentAmt(int principal, decimal rate, int terms,MortgageEnum.InterestRepayment repaymentType)
 		{
+			if (repaymentType == MortgageEnum.InterestRepayment.InterestOnly)
+			{
+				return Math.Round(CalculateTotalInterest(principal,rate,terms,repaymentType) + principal);
+			}
 			var totalRepayment = CalculateEMIofFixedIntRate(principal, rate, terms) * terms;
 			return Math.Round(totalRepayment, 2);
 		}
 
-		private decimal CalculateTotalInterest(int principal, decimal rate, int terms)
+		private decimal CalculateTotalInterest(int principal, decimal rate, int terms,MortgageEnum.InterestRepayment repaymentType)
 		{	
-			var totalInterest = CalculateTotalRePaymentAmt(principal, rate, terms) - principal;
+			if(repaymentType == MortgageEnum.InterestRepayment.InterestOnly)
+			{
+				return Math.Round(((principal * rate) / 100) * (terms/12));
+			}
+				
+			var totalInterest = CalculateTotalRePaymentAmt(principal, rate, terms,repaymentType) - principal;
 			return Math.Round(totalInterest, 2);
 		}
 
-		private List<MonthlyAmortizationDto> CalculateMonthlyAmortization(int principal, decimal rate, int terms)
+		private List<MonthlyAmortizationDto> CalculateMonthlyAmortization(int principal, decimal rate, int terms,MortgageEnum.InterestRepayment interestRepayment)
 		{
+			if(interestRepayment == MortgageEnum.InterestRepayment.InterestOnly)
+			{
+				return CalculateMonthlyAmortizationforInterestOnly(principal, rate, terms);
+			}			
 			var amortizationList = new List<MonthlyAmortizationDto>();
 			decimal monthlyRoi = (rate / 100m) / 12m;
 			decimal emi = CalculateEMIofFixedIntRate(principal, rate, terms);
@@ -320,6 +334,31 @@ namespace MortgageCalculator.Bll.Services
 				});
 			}
 			return amortizationList;
-		}		
+		}
+		
+		private List<MonthlyAmortizationDto> CalculateMonthlyAmortizationforInterestOnly(int principal, decimal rate, int terms)
+		{
+			var amortizationList = new List<MonthlyAmortizationDto>();
+
+			decimal monthlyRoi = (rate / 100m) / 12m;
+			decimal interestPayment = Math.Round(principal * monthlyRoi, 2);
+			decimal outstandingBalance = principal;
+			for (int month = 1; month <= terms; month++)
+			{
+				decimal principalPayment = (month == terms) ? principal : 0;
+				decimal emi = interestPayment + principalPayment;
+				outstandingBalance -= principalPayment;
+				amortizationList.Add(new MonthlyAmortizationDto
+				{
+					EmiAmount = emi,
+					PaymentCount = month,
+					MonthlyInterest = interestPayment,
+					MonthlyPrincipal = principalPayment,
+					OpeningBalance = outstandingBalance + principalPayment,
+					OutStandingPrincipal = ((int)outstandingBalance <= 0) ? 0 : outstandingBalance
+				});
+			}
+			return amortizationList;
+		}
 	}
 }
