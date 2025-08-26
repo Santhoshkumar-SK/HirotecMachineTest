@@ -121,20 +121,20 @@ namespace MortgageCalculator.Bll.Services
 
 				int result = await _mortgageRepo.SaveCalculation(mortageEntity);
 				if (result > 0)
-				{					
+				{
 					response = new BaseResponse<MortgagewithCalculationDto>()
 					{
 						isSuccess = true,
 						Result = new MortgagewithCalculationDto
 						{
 							Mortgage = MapToMortgageDto(mortageEntity),
-							TotalInterest = CalculateTotalInterest(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInYears * 12, mortgage.InterestDetails.InterestRepayment),
-							TotalRepaymentAmount = CalculateTotalRePaymentAmt(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInYears * 12, mortgage.InterestDetails.InterestRepayment),
-							MonthlyAmortization = CalculateMonthlyAmortization(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInYears * 12,mortgage.InterestDetails.InterestRepayment)
+							TotalInterest = mortageEntity.TotalInterest,
+							TotalRepaymentAmount = mortageEntity.TotalAmount,
+							MonthlyAmortization = MapToMonthlyAmortizationDTO(mortageEntity.MonthlyAmortizations.ToList()),							
 						},
 						ErrorInfo = null,
 						HttpStatusCode = 201
-					};
+					}; 
 				}
 				else
 				{
@@ -166,8 +166,7 @@ namespace MortgageCalculator.Bll.Services
 			BaseResponse<MortgagewithCalculationDto> response;
 			try
 			{
-				var mortgage = _mortgageRepo.GetAllMortgageCalculationQueryable()
-					.Where(m => m.MortgageId == mortgageId).FirstOrDefault();
+				var mortgage = _mortgageRepo.GetCalculationwithAmortization(mortgageId);
 				if(mortgage == null)
 				{
 					response = new BaseResponse<MortgagewithCalculationDto>()
@@ -190,7 +189,9 @@ namespace MortgageCalculator.Bll.Services
 							Mortgage = MapToMortgageDto(mortgage),
 							TotalInterest = mortgage.TotalInterest,
 							TotalRepaymentAmount = mortgage.TotalAmount,
-							MonthlyAmortization = CalculateMonthlyAmortization(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInMonths, mortgage.InterestDetails.InterestRepayment)
+							MonthlyAmortization = (mortgage.MonthlyAmortizations == null || mortgage.MonthlyAmortizations.Count == 0) ?
+							 MapToMonthlyAmortizationDTO(CalculateMonthlyAmortization(mortgage.PrincipalAmount, mortgage.RateofInterest, mortgage.TermsInMonths, mortgage.InterestDetails.InterestRepayment))
+							: MapToMonthlyAmortizationDTO(mortgage.MonthlyAmortizations.ToList()),
 						}
 					};
 				}					
@@ -247,7 +248,9 @@ namespace MortgageCalculator.Bll.Services
 					FeesName = f.FeesName,
 					FeesAmount = f.FeesAmount,
 					MortgageDetailsId = f.MortgageDetailsId
-				}).ToList()
+				}).ToList(),
+				MonthlyAmortizations = CalculateMonthlyAmortization(dto.PrincipalAmount, 
+				dto.RateofInterest, dto.TermsInYears * 12, dto.InterestDetails.InterestRepayment)
 			};
 		}
 		private MortgageDto MapToMortgageDto(Mortgage entity)
@@ -277,6 +280,19 @@ namespace MortgageCalculator.Bll.Services
 			};
 		}
 		
+		private List<MonthlyAmortizationDto> MapToMonthlyAmortizationDTO(List<MonthlyAmortizations> entity)
+		{			
+			var monthlyAmortization = entity?.Select((emi,i) => new MonthlyAmortizationDto
+										{
+											PaymentCount = emi.PaymentCount,
+											EmiAmount = emi.EmiAmount,
+											MonthlyInterest = emi.MonthlyInterest,
+											MonthlyPrincipal = emi.MonthlyPrincipal,
+											OpeningBalance = emi.OpeningBalance,
+											OutStandingPrincipal = emi.OutStandingPrincipal
+										}).ToList();
+			return monthlyAmortization;
+		}
 		private decimal CalculateEMIofFixedIntRate(int principal, decimal rate, int terms)
 		{
 			decimal monthlyRoi = (rate/100m) / 12m ;
@@ -308,13 +324,13 @@ namespace MortgageCalculator.Bll.Services
 			return Math.Round(totalInterest, 2);
 		}
 
-		private List<MonthlyAmortizationDto> CalculateMonthlyAmortization(int principal, decimal rate, int terms,MortgageEnum.InterestRepayment interestRepayment)
+		private List<MonthlyAmortizations> CalculateMonthlyAmortization(int principal, decimal rate, int terms,MortgageEnum.InterestRepayment interestRepayment)
 		{
 			if(interestRepayment == MortgageEnum.InterestRepayment.InterestOnly)
 			{
 				return CalculateMonthlyAmortizationforInterestOnly(principal, rate, terms);
 			}			
-			var amortizationList = new List<MonthlyAmortizationDto>();
+			var amortizationList = new List<MonthlyAmortizations>();
 			decimal monthlyRoi = (rate / 100m) / 12m;
 			decimal emi = CalculateEMIofFixedIntRate(principal, rate, terms);
 			decimal outstandingBalance = principal;
@@ -323,7 +339,7 @@ namespace MortgageCalculator.Bll.Services
 				decimal interestPayment = Math.Round(outstandingBalance * monthlyRoi, 2);
 				decimal principalPayment = Math.Round(emi - interestPayment, 2);
 				outstandingBalance -= principalPayment;
-				amortizationList.Add(new MonthlyAmortizationDto
+				amortizationList.Add(new MonthlyAmortizations
 				{
 					EmiAmount = emi,
 					PaymentCount = month,
@@ -332,13 +348,13 @@ namespace MortgageCalculator.Bll.Services
 					OpeningBalance = outstandingBalance + principalPayment,
 					OutStandingPrincipal = ((int)outstandingBalance <= 0) ? 0 : outstandingBalance
 				});
-			}
+			} 
 			return amortizationList;
 		}
 		
-		private List<MonthlyAmortizationDto> CalculateMonthlyAmortizationforInterestOnly(int principal, decimal rate, int terms)
+		private List<MonthlyAmortizations> CalculateMonthlyAmortizationforInterestOnly(int principal, decimal rate, int terms)
 		{
-			var amortizationList = new List<MonthlyAmortizationDto>();
+			var amortizationList = new List<MonthlyAmortizations>();
 
 			decimal monthlyRoi = (rate / 100m) / 12m;
 			decimal interestPayment = Math.Round(principal * monthlyRoi, 2);
@@ -348,7 +364,7 @@ namespace MortgageCalculator.Bll.Services
 				decimal principalPayment = (month == terms) ? principal : 0;
 				decimal emi = interestPayment + principalPayment;
 				outstandingBalance -= principalPayment;
-				amortizationList.Add(new MonthlyAmortizationDto
+				amortizationList.Add(new MonthlyAmortizations
 				{
 					EmiAmount = emi,
 					PaymentCount = month,

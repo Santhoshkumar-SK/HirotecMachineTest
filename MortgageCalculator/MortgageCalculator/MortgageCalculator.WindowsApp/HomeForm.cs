@@ -38,7 +38,7 @@ namespace MortgageCalculator.WindowsApp
 				{
 					MortgageName = mortgageNameTextBox.Text.ToString(),
 					PrincipalAmount = Convert.ToInt32(principleAmtTxtBox.Text),
-					RateofInterest = Convert.ToInt32(roiTextBox.Text),
+					RateofInterest = Convert.ToDecimal(roiTextBox.Text),
 					TermsInYears = Convert.ToInt32(termsinYearsTxtBox.Text),
 					InterestDetails = new InterestDetailsDto()
 					{

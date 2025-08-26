@@ -32,6 +32,7 @@ namespace MortgageCalculator.Dll.Entities
 		public decimal TotalInterest { get; set; }
         public virtual InterestDetails InterestDetails { get; set; }
 		public ICollection<MortgageFees> MortgageFees { get; set; }
+		public ICollection<MonthlyAmortizations> MonthlyAmortizations { get; set; }
 	}
 
   

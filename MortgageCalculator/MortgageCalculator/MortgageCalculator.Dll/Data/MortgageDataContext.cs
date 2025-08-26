@@ -22,5 +22,6 @@ namespace MortgageCalculator.Dll.Data
 		public DbSet<Mortgage> Mortgages { get; set; }
 		public DbSet<InterestDetails> InterestDetails { get; set; }
 		public DbSet<MortgageFees> MortgageFees { get; set; }	
+		public DbSet<MonthlyAmortizations> MonthlyAmortizations { get; set; }
 	}
 }

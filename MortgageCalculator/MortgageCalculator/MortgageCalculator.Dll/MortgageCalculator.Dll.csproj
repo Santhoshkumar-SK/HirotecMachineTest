@@ -120,6 +120,7 @@
   <ItemGroup>
     <Compile Include="Data\MortgageDataContext.cs" />
     <Compile Include="Entities\InterestDetails.cs" />
+    <Compile Include="Entities\MonthlyAmortizations.cs" />
     <Compile Include="Entities\Mortgage.cs" />
     <Compile Include="Entities\MortgageFees.cs" />
     <Compile Include="Migrations\202508241214158_IntialDbSetup.cs" />
@@ -129,6 +130,10 @@
     <Compile Include="Migrations\202508241435058_UpdatedInterestDetails.cs" />
     <Compile Include="Migrations\202508241435058_UpdatedInterestDetails.Designer.cs">
       <DependentUpon>202508241435058_UpdatedInterestDetails.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202508260717204_AddedMonthlyAmortizations.cs" />
+    <Compile Include="Migrations\202508260717204_AddedMonthlyAmortizations.Designer.cs">
+      <DependentUpon>202508260717204_AddedMonthlyAmortizations.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -153,6 +158,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202508241435058_UpdatedInterestDetails.resx">
       <DependentUpon>202508241435058_UpdatedInterestDetails.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202508260717204_AddedMonthlyAmortizations.resx">
+      <DependentUpon>202508260717204_AddedMonthlyAmortizations.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -12,5 +12,6 @@ namespace MortgageCalculator.Dll.Repos
 	{		
 		Task<int> SaveCalculation(Mortgage mortgage);
 		IQueryable<Mortgage> GetAllMortgageCalculationQueryable();
+		Mortgage GetCalculationwithAmortization(int mortgageId);
 	}
 }

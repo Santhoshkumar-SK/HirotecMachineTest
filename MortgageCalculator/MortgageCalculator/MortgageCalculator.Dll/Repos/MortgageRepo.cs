@@ -5,6 +5,7 @@ using MortgageCalculator.Dto;
 using MortgageCalculator.Dto.CustomException;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Data.Entity.Validation;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,16 @@ namespace MortgageCalculator.Dll.Repos
 		public IQueryable<Mortgage> GetAllMortgageCalculationQueryable()
 		{
 			return _context.Mortgages.AsQueryable();
+		}
+
+		public Mortgage GetCalculationwithAmortization(int mortgageId)
+		{
+			return _context.Mortgages.
+					Include(am => am.MonthlyAmortizations)
+					.Include(fe => fe.MortgageFees)
+					.Where(mor => mor.MortgageId == mortgageId)
+					.FirstOrDefault()
+					;
 		}
 
 		public async Task<int> SaveCalculation(Mortgage mortgage) 
